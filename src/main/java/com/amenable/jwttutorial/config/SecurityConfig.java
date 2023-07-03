@@ -17,8 +17,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.CorsFilter;
 
-@EnableWebSecurity
-@EnableMethodSecurity
+@EnableWebSecurity // 기본적인 Web 보안을 활성화 하는 것
+@EnableMethodSecurity // @PreAuthorize 애노테이션을 메서드 단위로 추가하기 위해서 적용
 @Configuration
 public class SecurityConfig {
 
@@ -52,11 +52,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
 
             .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
+            // 예외처리를 할때 우리가 만든 jwtAccessDeniedHandler, jwtAuthenticationEntryPoint 추가
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 .accessDeniedHandler(jwtAccessDeniedHandler)
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
             )
 
+            // 토큰이 없는 상태에서 들어오는 경우
             .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                 .requestMatchers("/api/hello", "/api/authenticate", "/api/signup").permitAll()
                 .requestMatchers(PathRequest.toH2Console()).permitAll()
@@ -75,6 +77,7 @@ public class SecurityConfig {
                 )
             )
 
+            // JwtSecurityConfig 클래스 적용
             .apply(new JwtSecurityConfig(tokenProvider));
 
         return http.build();

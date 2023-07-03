@@ -30,6 +30,7 @@ public class UserController {
         response.sendRedirect("/api/user");
     }
 
+    // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<UserDto> signup(
         @Valid @RequestBody UserDto userDto
@@ -37,12 +38,16 @@ public class UserController {
         return ResponseEntity.ok(userService.signup(userDto));
     }
 
+    // 자신의 정보 가져오기
+    // USER_ADMIN부터 접근 가능
     @GetMapping("/user")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<UserDto> getMyUserInfo(HttpServletRequest request) {
         return ResponseEntity.ok(userService.getMyUserWithAuthorities());
     }
 
+    // 특정 유저 정보 가져오기
+    // ROLE_ADMIN부터 접근 가능
     @GetMapping("/user/{username}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<UserDto> getUserInfo(@PathVariable String username) {

@@ -29,20 +29,26 @@ public class AuthController {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
+    // 로그인 API
     @PostMapping("/authenticate")
     public ResponseEntity<TokenDto> authorize(@Valid @RequestBody LoginDto loginDto) {
 
         UsernamePasswordAuthenticationToken authenticationToken =
             new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
 
+        // CustomUserDetailsService의 loadUserByUsername을 통한 결과값으로 authentication 객체를 생성
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        // 생성된 authentication 객체를 SecurityContextHolder에 저장
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // 인증정보를 통해 jwt 토큰 생성
         String jwt = tokenProvider.createToken(authentication);
 
+        // JWT 토큰을 헤더에 넣어주기
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
 
+        // TokenDto를 통해서 httpBody에도 넣어서 리턴
         return new ResponseEntity<>(new TokenDto(jwt), httpHeaders, HttpStatus.OK);
     }
 }

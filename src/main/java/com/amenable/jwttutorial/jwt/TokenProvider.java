@@ -36,20 +36,26 @@ public class TokenProvider implements InitializingBean {
         this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
     }
 
+    // 빈이 생성되고 의존성 주입까지 받은 다음에,
+    // 주입 받은 secret 값을 디코딩하여 key 변수에 할당하기 위한 것
     @Override
     public void afterPropertiesSet() throws Exception {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // Authentication 객체의 권한 정보를 이용해서 토큰 생성
     public String createToken(Authentication authentication) {
+        // 권한들
         String authorities = authentication.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)
             .collect(Collectors.joining(","));
 
+        // 토큰 만료 시간 설정
         long now = (new Date()).getTime();
         Date validity = new Date(now + this.tokenValidityInMilliseconds);
 
+        // 토큰 생성
         return Jwts.builder()
             .setSubject(authentication.getName())
             .claim(AUTHORITIES_KEY, authorities)
@@ -58,7 +64,10 @@ public class TokenProvider implements InitializingBean {
             .compact();
     }
 
+    // Token에 담겨있는 정보를 이용해서 Authentication 객체를 리턴
     public Authentication getAuthentication(String token) {
+
+        // 클레임들 가져오기 (정보들)
         Claims claims = Jwts
             .parserBuilder()
             .setSigningKey(key)
@@ -66,16 +75,20 @@ public class TokenProvider implements InitializingBean {
             .parseClaimsJws(token)
             .getBody();
 
+        // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities =
             Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
+        // 권한 정보를 이용해서 유저 객체 만들기
         User principal = new User(claims.getSubject(), "", authorities);
 
+        // '유저 객체, 토큰, 권한들'을 이용해서 Authentication 객체를 리턴
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 
+    // 토큰의 유효성 검사
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
