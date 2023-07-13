@@ -49,6 +49,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             // token을 사용하는 방식이기 때문에 csrf를 disable합니다.
+            // 세션을 사용하지 않음(=브라우저로부터 요청이 오는게 아님, REST API를 사용함)
+            // 브라우저로부터 요청을 CSRF에 대한 취약점 발생 요소가 제거됨
+            // 그래서 disable 할 수 있는 것
             .csrf(csrf -> csrf.disable())
 
             .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
@@ -71,6 +74,7 @@ public class SecurityConfig {
             )
 
             // enable h2-console
+            // X-Frame-Options 설정
             .headers(headers ->
                 headers.frameOptions(options ->
                     options.sameOrigin()
